@@ -9,7 +9,9 @@ import { TelemetryClient } from './common/telemetryClient';
 
 // Tree View UI
 import { registerAzureUtilsExtensionVariables } from '@microsoft/vscode-azext-azureutils';
-import { AzExtTreeDataProvider, AzExtTreeItem, CommandCallback, IActionContext, IParsedError, createAzExtOutputChannel, isUserCancelledError, parseError, registerCommand, registerEvent } from '@microsoft/vscode-azext-utils';
+import { AzExtTreeDataProvider, AzExtTreeItem, CommandCallback, IActionContext, IParsedError, callWithTelemetryAndErrorHandling, createAzExtOutputChannel, isUserCancelledError, parseError, registerCommand, registerEvent } from '@microsoft/vscode-azext-utils';
+import { getSubscriptionProviderFactory } from "./azure/azureAccount/getSubscriptionProviderFactory";
+import { logIn } from './azure/azureAccount/logIn';
 import { cleanupSearchResult } from './commands/cleanUpSearch';
 import { showOpenApi } from './commands/editOpenApi';
 import { ExportAPI } from './commands/exportApi';
@@ -25,9 +27,8 @@ import { testInPostman } from './commands/testInPostman';
 import { chatParticipantId, doubleClickDebounceDelay, selectedNodeKey } from './constants';
 import { ext } from './extensionVariables';
 import { ApiVersionDefinitionTreeItem } from './tree/ApiVersionDefinitionTreeItem';
-import { AzureAccountTreeItem } from './tree/AzureAccountTreeItem';
+import { AzureAccountTreeItemD1 } from './tree/AzureAccountTreeItem';
 import { OpenApiEditor } from './tree/Editors/openApi/OpenApiEditor';
-
 // Copilot Chat
 import { detectBreakingChange } from './commands/detectBreakingChange';
 import { generateMarkdownDocument } from './commands/generateMarkdownDocument';
@@ -47,11 +48,14 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(ext.outputChannel);
     registerAzureUtilsExtensionVariables(ext);
 
-    const azureAccountTreeItem = new AzureAccountTreeItem();
+    const azureAccountTreeItem = new AzureAccountTreeItemD1();
     context.subscriptions.push(azureAccountTreeItem);
     ext.treeItem = azureAccountTreeItem;
     // var a = ext.treeItem.subscription;
 
+    await callWithTelemetryAndErrorHandling('azure-api-center.activate', async (activateContext: IActionContext) => {
+        ext.subscriptionProviderFactory = getSubscriptionProviderFactory();
+    })
     const treeDataProvider = new AzExtTreeDataProvider(azureAccountTreeItem, "appService.loadMore");
     ext.treeDataProvider = treeDataProvider;
 
@@ -83,7 +87,7 @@ export async function activate(context: vscode.ExtensionContext) {
     registerEvent('azure-api-center.openApiEditor.onDidSaveTextDocument',
         vscode.workspace.onDidSaveTextDocument,
         async (actionContext: IActionContext, doc: vscode.TextDocument) => { await openApiEditor.onDidSaveTextDocument(actionContext, context.globalState, doc); });
-
+    registerCommandWithTelemetry('azure-api-center.logIn', (context: IActionContext) => logIn(context));
     registerCommandWithTelemetry('azure-api-center.showOpenApi', showOpenApi, doubleClickDebounceDelay);
 
     registerCommandWithTelemetry('azure-api-center.open-api-docs', openAPiInSwagger);

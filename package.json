@@ -30,9 +30,6 @@
   "activationEvents": [],
   "main": "./dist/extension.js",
   "l10n": "l10n",
-  "extensionDependencies": [
-    "ms-vscode.azure-account"
-  ],
   "contributes": {
     "commands": [
       {
@@ -121,6 +118,11 @@
         "command": "azure-api-center.generateMarkdownDocument",
         "title": "%azure-api-center.commands.generateMarkdownDocument.title%",
         "category": "Azure API Center"
+      },
+      {
+        "command": "azure-api-center.logIn",
+        "title": "sign in to azure...",
+        "category": "Azure"
       }
     ],
     "views": {
