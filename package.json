@@ -127,6 +127,10 @@
         "title": "add Apis to workspace",
         "icon": "$(add)",
         "category": "Azure API Center"
+      },
+      {
+        "command": "azure-api-center.apiCenterWorkspace.refresh",
+        "title": "refresh workspace treeview"
       }
     ],
     "views": {

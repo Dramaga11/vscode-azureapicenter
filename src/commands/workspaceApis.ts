@@ -10,9 +10,13 @@ export async function getDataPlaneApis(context: IActionContext): Promise<any | v
     if (!endpointUrl || !clientid || !tenantid) {
         return;
     }
+    return await startWorkTree(endpointUrl, clientid, tenantid);
+}
+
+export async function startWorkTree(endpointUrl: string, clientId: string, tenantId: string) {
     const session = await vscode.authentication.getSession('microsoft', [
-        `VSCODE_CLIENT_ID:${clientid}`, // Replace by your client id
-        `VSCODE_TENANT:${tenantid}`, // Replace with the tenant ID or common if multi-tenant
+        `VSCODE_CLIENT_ID:${clientId}`, // Replace by your client id
+        `VSCODE_TENANT:${tenantId}`, // Replace with the tenant ID or common if multi-tenant
         "offline_access", // Required for the refresh token.
         "https://azure-apicenter.net/user_impersonation"
     ], { createIfNone: false });

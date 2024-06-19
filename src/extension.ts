@@ -30,7 +30,7 @@ import { OpenApiEditor } from './tree/Editors/openApi/OpenApiEditor';
 // Copilot Chat
 import { detectBreakingChange } from './commands/detectBreakingChange';
 import { generateMarkdownDocument } from './commands/generateMarkdownDocument';
-import { getDataPlaneApis } from './commands/workspaceApis';
+import { getDataPlaneApis, startWorkTree } from './commands/workspaceApis';
 import { ErrorProperties, TelemetryProperties } from './common/telemetryEvent';
 import { IChatResult, handleChatMessage } from './copilot-chat/copilotChat';
 import { ApiDefinitionTreeItem, DataPlanAccountManagerTreeItem } from './tree/DataPlaneAccount';
@@ -115,11 +115,27 @@ export async function activate(context: vscode.ExtensionContext) {
     registerCommandWithTelemetry('azure-api-center.generateMarkdownDocument', generateMarkdownDocument);
 
     registerCommandWithTelemetry('azure-api-center.apiCenterTreeView.refresh', async (context: IActionContext) => refreshTree(context));
-
+    registerCommandWithTelemetry('azure-api-center.apiCenterWorkspace.refresh', async (context: IActionContext) => ext.workspaceItem.refresh(context));
     registerCommandWithTelemetry('azure-api-center.apiCenterWorkspace.addApis', async (context: IActionContext) => {
         await getDataPlaneApis(context);
         ext.workspaceItem.refresh(context);
     });
+
+    const handleUri = async (uri: vscode.Uri) => {
+        // const queryParams = new URLSearchParams(uri.query);
+        let msg = uri.query;
+        let msgs = msg.split('&');
+        // vscode.window.showInformationMessage(message);
+        await startWorkTree(msgs[2], msgs[0], msgs[1]);
+        // await vscode.window.showInformationMessage(`URI Handler says: ${queryParams.get('say') as string}`);
+        vscode.commands.executeCommand('azure-api-center.apiCenterWorkspace.refresh')
+    };
+
+    context.subscriptions.push(
+        vscode.window.registerUriHandler({
+            handleUri
+        })
+    );
 
     const chatParticipant = vscode.chat.createChatParticipant(chatParticipantId, handleChatMessage);
     chatParticipant.followupProvider = {
