@@ -12,7 +12,8 @@ import { OpenApiEditor } from "./tree/Editors/openApi/OpenApiEditor";
 
 export interface DataPlaneAccount {
     readonly domain: string;
-    readonly accessToken: string;
+    readonly tenantId: string;
+    readonly clientId: string;
 }
 
 export namespace ext {

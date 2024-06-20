@@ -10,10 +10,13 @@ export async function getDataPlaneApis(context: IActionContext): Promise<any | v
     if (!endpointUrl || !clientid || !tenantid) {
         return;
     }
-    return await startWorkTree(endpointUrl, clientid, tenantid);
+    return await getSessionToken(endpointUrl, clientid, tenantid);
+}
+export function setAccountToExt(domain: string, clientId: string, tenantId: string) {
+    ext.dataPlaneAccounts.push({ domain: domain, tenantId: tenantId, clientId: clientId });
 }
 
-export async function startWorkTree(endpointUrl: string, clientId: string, tenantId: string) {
+export async function getSessionToken(endpointUrl: string, clientId: string, tenantId: string) {
     const session = await vscode.authentication.getSession('microsoft', [
         `VSCODE_CLIENT_ID:${clientId}`, // Replace by your client id
         `VSCODE_TENANT:${tenantId}`, // Replace with the tenant ID or common if multi-tenant
@@ -21,10 +24,7 @@ export async function startWorkTree(endpointUrl: string, clientId: string, tenan
         "https://azure-apicenter.net/user_impersonation"
     ], { createIfNone: false });
     if (session?.accessToken) {
-        let index = ext.dataPlaneAccounts.findIndex((item) => item.domain == endpointUrl)
-        if (index === -1) {
-            ext.dataPlaneAccounts.push({ domain: endpointUrl, accessToken: session.accessToken })
-        }
+        return session.accessToken;
     } else {
         vscode.window.showErrorMessage("Please login your Microsoft Account first!");
     }

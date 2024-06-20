@@ -2,37 +2,35 @@
 // Licensed under the MIT license.
 import { AzExtParentTreeItem, AzExtTreeItem, IActionContext, TreeItemIconPath } from "@microsoft/vscode-azext-utils";
 import * as vscode from "vscode";
-import { ext } from "../extensionVariables";
+import { getSessionToken } from "../commands/workspaceApis";
+import { DataPlaneAccount, ext } from "../extensionVariables";
 import { UiStrings } from "../uiStrings";
 import { treeUtils } from "../utils/treeUtils";
-export interface DataPlaneAccounts {
-    readonly tenantId: string;
-    readonly clientId: string;
-    readonly accessToken: string;
-}
+
 export class DataPlanAccountManagerTreeItem extends AzExtParentTreeItem {
     public contextValue = DataPlanAccountManagerTreeItem.contextValue;
     public async loadMoreChildrenImpl(clearCache: boolean, context: IActionContext): Promise<AzExtTreeItem[]> {
-        const servers = this.serverName();
+        // const servers = this.serverName();
+        const accounts = ext.dataPlaneAccounts;
         return await this.createTreeItemsWithErrorHandling(
-            servers,
+            accounts,
             'inValidResource',
-            async server => new ApiServerItem(this, server),
-            server => server.name
+            async account => new ApiServerItem(this, account),
+            account => account.domain.split('0')[0]
         )
     }
-    private serverName(): ApiServer[] {
-        if (ext.dataPlaneAccounts.length == 0) {
-            return [];
-        }
-        let results = [];
-        for (let account of ext.dataPlaneAccounts) {
-            let domain: string = account.domain;
-            let res = domain.split('.')[0];
-            results.push({ name: res } as ApiServer);
-        }
-        return results.flat();
-    }
+    // private serverName(): ApiServer[] {
+    //     if (ext.dataPlaneAccounts.length == 0) {
+    //         return [];
+    //     }
+    //     let results = [];
+    //     for (let account of ext.dataPlaneAccounts) {
+    //         let domain: string = account.domain;
+    //         let res = domain.split('.')[0];
+    //         results.push({ name: res } as ApiServer);
+    //     }
+    //     return results.flat();
+    // }
 
     public hasMoreChildrenImpl(): boolean {
         return false;
@@ -57,11 +55,11 @@ export class ApiServerItem extends AzExtParentTreeItem {
     public hasMoreChildrenImpl(): boolean {
         return false;
     }
-    constructor(parent: AzExtParentTreeItem, apiCenterServer: ApiServer) {
+    constructor(parent: AzExtParentTreeItem, account: DataPlaneAccount) {
         super(parent);
-        this.label = apiCenterServer.name;
+        this.label = account.domain.split('.')[0];
         this.contextValue = ApiServerItem.contextValue;
-        this.apisTreeItem = new ApiTreesItem(this, apiCenterServer);
+        this.apisTreeItem = new ApiTreesItem(this, account);
     }
     public static contextValue: string = "WorkspaceAPICenter-Server";
     public get iconPath(): TreeItemIconPath {
@@ -75,7 +73,7 @@ export class ApiTreesItem extends AzExtParentTreeItem {
         return await this.createTreeItemsWithErrorHandling(
             apis,
             'invalidResource',
-            async apic => new ApiTreeItem(this, this.apiCenter.name, apic),
+            async apic => new ApiTreeItem(this, this.label, apic),
             apic => apic.name
         );
     }
@@ -91,16 +89,14 @@ export class ApiTreesItem extends AzExtParentTreeItem {
     public get label(): string {
         return UiStrings.TreeitemLabelApis;
     }
-    constructor(parent: AzExtParentTreeItem, public apiCenter: ApiServer) {
+    constructor(parent: AzExtParentTreeItem, public account: DataPlaneAccount) {
         super(parent);
     }
     private async getApis(): Promise<ApiCenter[]> {
-        if (ext.dataPlaneAccounts.length == 0) {
-            return [];
-        }
-        let result: ApiCenter[] = [];
-        for (let data of ext.dataPlaneAccounts) {
-            let server = new fetchApiCenterServer(data.domain, data.accessToken);
+        let accessToken = await getSessionToken(this.account.domain, this.account.clientId, this.account.tenantId);
+        let result = [];
+        if (accessToken) {
+            let server = new fetchApiCenterServer(this.account.domain, accessToken);
             let arrs = await server.getApis();
             result.push(arrs)
         }
