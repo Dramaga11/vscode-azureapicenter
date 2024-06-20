@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 import { IActionContext } from "@microsoft/vscode-azext-utils";
 import * as vscode from 'vscode';
-import { ext } from "../extensionVariables";
+import { DataPlaneAccount, ext } from "../extensionVariables";
 export async function getDataPlaneApis(context: IActionContext): Promise<any | void> {
     const endpointUrl = await vscode.window.showInputBox({ title: "Input Runtime URL", ignoreFocusOut: true });
     const clientid = await vscode.window.showInputBox({ title: "Input Client ID", ignoreFocusOut: true });
@@ -10,10 +10,16 @@ export async function getDataPlaneApis(context: IActionContext): Promise<any | v
     if (!endpointUrl || !clientid || !tenantid) {
         return;
     }
-    return await getSessionToken(clientid, tenantid);
+    // return await getSessionToken(clientid, tenantid);
+    return setAccountToExt(endpointUrl, clientid, tenantid);
 }
 export function setAccountToExt(domain: string, clientId: string, tenantId: string) {
-    ext.dataPlaneAccounts.push({ domain: domain, tenantId: tenantId, clientId: clientId });
+    function pushIfNotExist(array: DataPlaneAccount[], element: DataPlaneAccount) {
+        if (!array.some(item => item.domain === element.domain)) {
+            array.push(element);
+        }
+    }
+    pushIfNotExist(ext.dataPlaneAccounts, { domain: domain, tenantId: tenantId, clientId: clientId });
 }
 
 export async function getSessionToken(clientId: string, tenantId: string) {

@@ -47,6 +47,9 @@ export class ApiServerItem extends AzExtParentTreeItem {
         this.contextValue = ApiServerItem.contextValue;
         this.apisTreeItem = new ApiTreesItem(this, account);
     }
+    public get id(): string {
+        return this.label;
+    }
     public static contextValue: string = "WorkspaceAPICenter-Server";
     public get iconPath(): TreeItemIconPath {
         return treeUtils.getIconPath('apiCenter');
@@ -84,7 +87,7 @@ export class ApiTreesItem extends AzExtParentTreeItem {
         if (accessToken) {
             let server = new fetchApiCenterServer(this.account.domain, accessToken);
             let arrs = await server.getApis();
-            result.push(arrs)
+            if (arrs) result.push(arrs)
         }
         return result.flat();
     }
@@ -148,7 +151,7 @@ export class ApiVersionsTreeItem extends AzExtParentTreeItem {
         if (accessToken) {
             let server = new fetchApiCenterServer(this.account.domain, accessToken);
             let arrs = await server.getVersions(this._apiCenterApi.name);
-            result.push(arrs)
+            if (arrs) result.push(arrs)
         }
         return result.flat();
     }
@@ -212,7 +215,9 @@ export class ApiDefinitionsTreeItem extends AzExtParentTreeItem {
         if (accessToken) {
             let server = new fetchApiCenterServer(this.account.domain, accessToken);
             let arrs = await server.getDefinitions(this._apiCenterApiName, this._apiCenterApiVersion.name);
-            result.push(arrs)
+            if (arrs) {
+                result.push(arrs)
+            }
         }
         return result.flat();
     }
