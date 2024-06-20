@@ -10,7 +10,6 @@ import { treeUtils } from "../utils/treeUtils";
 export class DataPlanAccountManagerTreeItem extends AzExtParentTreeItem {
     public contextValue = DataPlanAccountManagerTreeItem.contextValue;
     public async loadMoreChildrenImpl(clearCache: boolean, context: IActionContext): Promise<AzExtTreeItem[]> {
-        // const servers = this.serverName();
         const accounts = ext.dataPlaneAccounts;
         return await this.createTreeItemsWithErrorHandling(
             accounts,
@@ -19,19 +18,6 @@ export class DataPlanAccountManagerTreeItem extends AzExtParentTreeItem {
             account => account.domain.split('0')[0]
         )
     }
-    // private serverName(): ApiServer[] {
-    //     if (ext.dataPlaneAccounts.length == 0) {
-    //         return [];
-    //     }
-    //     let results = [];
-    //     for (let account of ext.dataPlaneAccounts) {
-    //         let domain: string = account.domain;
-    //         let res = domain.split('.')[0];
-    //         results.push({ name: res } as ApiServer);
-    //     }
-    //     return results.flat();
-    // }
-
     public hasMoreChildrenImpl(): boolean {
         return false;
     }
@@ -73,7 +59,7 @@ export class ApiTreesItem extends AzExtParentTreeItem {
         return await this.createTreeItemsWithErrorHandling(
             apis,
             'invalidResource',
-            async apic => new ApiTreeItem(this, this.label, apic),
+            async apic => new ApiTreeItem(this, this.account, this.label, apic),
             apic => apic.name
         );
     }
@@ -93,7 +79,7 @@ export class ApiTreesItem extends AzExtParentTreeItem {
         super(parent);
     }
     private async getApis(): Promise<ApiCenter[]> {
-        let accessToken = await getSessionToken(this.account.domain, this.account.clientId, this.account.tenantId);
+        let accessToken = await getSessionToken(this.account.clientId, this.account.tenantId);
         let result = [];
         if (accessToken) {
             let server = new fetchApiCenterServer(this.account.domain, accessToken);
@@ -118,12 +104,12 @@ export class ApiTreeItem extends AzExtParentTreeItem {
     public contextValue: string;
     private readonly _apiCenterName: string;
     public readonly apiVersionsTreeItem: ApiVersionsTreeItem;
-    constructor(parent: AzExtParentTreeItem, apiName: string, apiCenter: ApiCenter) {
+    constructor(parent: AzExtParentTreeItem, account: DataPlaneAccount, apiName: string, apiCenter: ApiCenter) {
         super(parent);
         this.label = apiCenter.name;
         this._apiCenterName = apiName;
         this.contextValue = ApiTreeItem.contextValue;
-        this.apiVersionsTreeItem = new ApiVersionsTreeItem(this, apiName, apiCenter);
+        this.apiVersionsTreeItem = new ApiVersionsTreeItem(this, account, apiName, apiCenter);
     }
     public static contextValue: string = "WorkspaceAPICenter-API";
 }
@@ -134,7 +120,7 @@ export class ApiVersionsTreeItem extends AzExtParentTreeItem {
         return await this.createTreeItemsWithErrorHandling(
             versions,
             'invalidResource',
-            async version => new ApiVersionTreeItem(this, this._apiCenterName, this._apiCenterApi.name, version),
+            async version => new ApiVersionTreeItem(this, this.account, this._apiCenterName, this._apiCenterApi.name, version),
             version => version.name
         );
     }
@@ -151,18 +137,16 @@ export class ApiVersionsTreeItem extends AzExtParentTreeItem {
     }
     private readonly _apiCenterName: string;
     private readonly _apiCenterApi: ApiCenter;
-    constructor(parent: AzExtParentTreeItem, apiCenterName: string, apiCenterApi: ApiCenter) {
+    constructor(parent: AzExtParentTreeItem, public account: DataPlaneAccount, apiCenterName: string, apiCenterApi: ApiCenter) {
         super(parent);
         this._apiCenterName = apiCenterName;
         this._apiCenterApi = apiCenterApi;
     }
     private async getVersions(): Promise<ApiVersion[]> {
-        if (ext.dataPlaneAccounts.length == 0) {
-            return [];
-        }
-        let result: ApiVersion[] = [];
-        for (let data of ext.dataPlaneAccounts) {
-            let server = new fetchApiCenterServer(data.domain, data.accessToken);
+        let accessToken = await getSessionToken(this.account.clientId, this.account.tenantId);
+        let result = [];
+        if (accessToken) {
+            let server = new fetchApiCenterServer(this.account.domain, accessToken);
             let arrs = await server.getVersions(this._apiCenterApi.name);
             result.push(arrs)
         }
@@ -181,9 +165,9 @@ export class ApiVersionTreeItem extends AzExtParentTreeItem {
     public label: string;
     public contextValue: string;
     public readonly apiVersionDefinitionsTreeItem: ApiDefinitionsTreeItem;
-    constructor(parent: AzExtParentTreeItem, apiServerName: string, apiName: string, apiVersion: ApiVersion) {
+    constructor(parent: AzExtParentTreeItem, account: DataPlaneAccount, apiServerName: string, apiName: string, apiVersion: ApiVersion) {
         super(parent);
-        this.apiVersionDefinitionsTreeItem = new ApiDefinitionsTreeItem(this, apiServerName, apiName, apiVersion);
+        this.apiVersionDefinitionsTreeItem = new ApiDefinitionsTreeItem(this, account, apiServerName, apiName, apiVersion);
         this.label = apiVersion.name;
         this.contextValue = ApiVersionTreeItem.contextValue;
     }
@@ -197,8 +181,7 @@ export class ApiDefinitionsTreeItem extends AzExtParentTreeItem {
         return await this.createTreeItemsWithErrorHandling(
             definitions,
             'invalidResource',
-            async definition => new ApiDefinitionTreeItem(this, this._apiCenterName, this._apiCenterApiName, this._apiCenterApiVersion.name, definition),
-            // async definition => new ApiVersionDefinitionTreeItem(this, this._apiCenterName, this._apiName, this.label, definition),
+            async definition => new ApiDefinitionTreeItem(this, this.account, this._apiCenterName, this._apiCenterApiName, this._apiCenterApiVersion.name, definition),
             definition => definition.name
         );
     }
@@ -213,7 +196,7 @@ export class ApiDefinitionsTreeItem extends AzExtParentTreeItem {
     public get iconPath(): TreeItemIconPath {
         return new vscode.ThemeIcon("list-selection");
     }
-    constructor(parent: AzExtParentTreeItem, apiService: string, apiName: string, apiVersion: ApiVersion) {
+    constructor(parent: AzExtParentTreeItem, public account: DataPlaneAccount, apiService: string, apiName: string, apiVersion: ApiVersion) {
         super(parent);
         this._apiCenterName = apiService;
         this._apiCenterApiName = apiName;
@@ -224,12 +207,10 @@ export class ApiDefinitionsTreeItem extends AzExtParentTreeItem {
         return UiStrings.TreeitemLabelDefinitions;
     }
     private async getDefinitions(): Promise<ApiDefinitions[]> {
-        if (ext.dataPlaneAccounts.length == 0) {
-            return [];
-        }
-        let result: ApiDefinitions[] = [];
-        for (let data of ext.dataPlaneAccounts) {
-            let server = new fetchApiCenterServer(data.domain, data.accessToken);
+        let accessToken = await getSessionToken(this.account.clientId, this.account.tenantId);
+        let result = [];
+        if (accessToken) {
+            let server = new fetchApiCenterServer(this.account.domain, accessToken);
             let arrs = await server.getDefinitions(this._apiCenterApiName, this._apiCenterApiVersion.name);
             result.push(arrs)
         }
@@ -242,7 +223,7 @@ export class ApiDefinitionTreeItem extends AzExtTreeItem {
     public readonly apiCenterName: string;
     public readonly apiName: string;
     public readonly apiVersion: string;
-    constructor(parent: AzExtParentTreeItem, apiCenterName: string, apiName: string, apiVersion: string, definition: ApiDefinitions) {
+    constructor(parent: AzExtParentTreeItem, public account: DataPlaneAccount, apiCenterName: string, apiName: string, apiVersion: string, definition: ApiDefinitions) {
         super(parent);
         this.label = definition.name;
         this.apiCenterName = apiCenterName;
@@ -283,21 +264,6 @@ export type ApiDefinitions = {
         name: string;
     }
 }
-
-// export type ApiCenterApiVersionDefinition = {
-//     id: string;
-//     location: string;
-//     name: string;
-//     properties: {
-//         title: string;
-//         specification: {
-//             name: string;
-//             version: string;
-//         }
-//     };
-//     // tslint:disable-next-line:no-reserved-keywords
-//     type: string;
-// };
 
 export enum Method {
     GET = "GET",

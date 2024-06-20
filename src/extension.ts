@@ -116,16 +116,12 @@ export async function activate(context: vscode.ExtensionContext) {
 
     registerCommandWithTelemetry('azure-api-center.apiCenterTreeView.refresh', async (context: IActionContext) => refreshTree(context));
     registerCommandWithTelemetry('azure-api-center.apiCenterWorkspace.refresh', async (context: IActionContext) => ext.workspaceItem.refresh(context));
-    registerCommandWithTelemetry('azure-api-center.apiCenterWorkspace.addApis', async (context: IActionContext) => {
-        // await getDataPlaneApis(context);
-        // ext.workspaceItem.refresh(context);
-    });
 
     const handleUri = async (uri: vscode.Uri) => {
         const queryParams = new URLSearchParams(uri.query);
         let tenantId = queryParams.get('tenantId') as string;
         let clientId = queryParams.get('clientId') as string;
-        let runtimeUrl = queryParams.get('runtimUrl') as string;
+        let runtimeUrl = queryParams.get('runtimeUrl') as string;
         // vscode.window.showInformationMessage(message);
         setAccountToExt(runtimeUrl, clientId, tenantId);
         // await vscode.window.showInformationMessage(`URI Handler says: ${queryParams.get('say') as string}`);

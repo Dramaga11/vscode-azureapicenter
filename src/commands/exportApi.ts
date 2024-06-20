@@ -14,6 +14,7 @@ import { ext } from "../extensionVariables";
 import { ApiVersionDefinitionTreeItem } from "../tree/ApiVersionDefinitionTreeItem";
 import { ApiDefinitionTreeItem, fetchApiCenterServer } from "../tree/DataPlaneAccount";
 import { createTemporaryFolder } from "../utils/fsUtil";
+import { getSessionToken } from "./workspaceApis";
 export namespace ExportAPI {
     export async function exportApi(
         context: IActionContext,
@@ -32,8 +33,9 @@ export namespace ExportAPI {
                 node?.apiCenterApiVersionDefinition.name!);
             await writeToTempFile(node!, exportedSpec.format, exportedSpec.value);
         } else if (node instanceof ApiDefinitionTreeItem) {
-            for (let data of ext.dataPlaneAccounts) {
-                let server = new fetchApiCenterServer(data.domain, data.accessToken);
+            let accessToken = await getSessionToken(node.account.clientId, node.account.tenantId);
+            if (accessToken) {
+                let server = new fetchApiCenterServer(node.account.domain, accessToken);
                 let results = await server.exportDefinitionLink(node.apiName, node.apiVersion, node.label);
                 if (results) {
                     const folderName = `${node.apiCenterName}-${node.apiName}`;

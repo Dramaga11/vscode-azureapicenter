@@ -10,13 +10,13 @@ export async function getDataPlaneApis(context: IActionContext): Promise<any | v
     if (!endpointUrl || !clientid || !tenantid) {
         return;
     }
-    return await getSessionToken(endpointUrl, clientid, tenantid);
+    return await getSessionToken(clientid, tenantid);
 }
 export function setAccountToExt(domain: string, clientId: string, tenantId: string) {
     ext.dataPlaneAccounts.push({ domain: domain, tenantId: tenantId, clientId: clientId });
 }
 
-export async function getSessionToken(endpointUrl: string, clientId: string, tenantId: string) {
+export async function getSessionToken(clientId: string, tenantId: string) {
     const session = await vscode.authentication.getSession('microsoft', [
         `VSCODE_CLIENT_ID:${clientId}`, // Replace by your client id
         `VSCODE_TENANT:${tenantId}`, // Replace with the tenant ID or common if multi-tenant

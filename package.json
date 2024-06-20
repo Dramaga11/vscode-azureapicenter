@@ -30,9 +30,6 @@
   "activationEvents": [],
   "main": "./dist/extension.js",
   "l10n": "l10n",
-  "extensionDependencies": [
-    "ms-vscode.azure-account"
-  ],
   "contributes": {
     "commands": [
       {
