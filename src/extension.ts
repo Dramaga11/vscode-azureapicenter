@@ -122,12 +122,11 @@ export async function activate(context: vscode.ExtensionContext) {
     });
 
     const handleUri = async (uri: vscode.Uri) => {
-        // const queryParams = new URLSearchParams(uri.query);
-        let msg = uri.query;
-        let msgs = msg.split('&');
-        // vscode.window.showInformationMessage(message);
-        await startWorkTree(msgs[2], msgs[0], msgs[1]);
-        // await vscode.window.showInformationMessage(`URI Handler says: ${queryParams.get('say') as string}`);
+        const queryParams = new URLSearchParams(uri.query);
+        const domain = queryParams.get('runtimeUrl') as string;
+        const clientId = queryParams.get('clientId') as string;
+        const tenantId = queryParams.get('tenantId') as string;
+        await startWorkTree(domain, clientId, tenantId);
         vscode.commands.executeCommand('azure-api-center.apiCenterWorkspace.refresh')
     };
 
