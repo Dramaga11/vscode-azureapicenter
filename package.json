@@ -127,7 +127,9 @@
       },
       {
         "command": "azure-api-center.apiCenterWorkspace.refresh",
-        "title": "refresh workspace treeview"
+        "title": "refresh workspace treeview",
+        "icon": "$(refresh)",
+        "category": "Azure API Center"
       }
     ],
     "views": {
@@ -164,7 +166,12 @@
         {
           "command": "azure-api-center.apiCenterWorkspace.addApis",
           "when": "view == apiCenterWorkspace",
-          "group": "navigation"
+          "group": "navigation@1"
+        },
+        {
+          "command": "azure-api-center.apiCenterWorkspace.refresh",
+          "when": "view == apiCenterWorkspace",
+          "group": "navigation@0"
         }
       ],
       "view/item/context": [
