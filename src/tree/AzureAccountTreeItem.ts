@@ -4,6 +4,7 @@ import { AzureSubscription, AzureSubscriptionProvider } from "@microsoft/vscode-
 import { AzureAccountTreeItemBase, SubscriptionTreeItemBase } from "@microsoft/vscode-azext-azureutils";
 import { AzExtTreeItem, AzureWizardPromptStep, GenericTreeItem, IActionContext, ISubscriptionActionContext, ISubscriptionContext } from "@microsoft/vscode-azext-utils";
 import * as vscode from "vscode";
+import { createSubscriptionContext } from "../azure/azureAccount/VSCodeAuthentication";
 import { ext } from "../extensionVariables";
 import { SubscriptionTreeItem } from "./SubscriptionTreeItem";
 export class AzureAccountTreeItem extends AzureAccountTreeItemBase {
@@ -64,6 +65,12 @@ export class AzureAccountTreeItemD1 extends AzureAccountTreeItemBase {
 
         } else {
           // let subscriptionContext: createSubscriptionContext(subscription),
+          return await this.createTreeItemsWithErrorHandling(
+            subscriptions,
+            'invalidApiCenter',
+            async sub => new SubscriptionTreeItem(this, createSubscriptionContext(sub)),
+            sub => sub.name
+          );
         }
       }
     }
@@ -81,7 +88,7 @@ export class AzureAccountTreeItemD1 extends AzureAccountTreeItemBase {
       this.subscriptionProvider = await ext.subscriptionProviderFactory();
     }
     this.statusSubscription = vscode.authentication.onDidChangeSessions((evt: vscode.AuthenticationSessionsChangeEvent) => {
-      if (evt.provider.id === 'microsoft' || evt.provider.id === 'microsoft-sovereign-cloud') {
+      if (evt.provider.id === 'microsoft') {
         if (Date.now() > nextSessionChangeMessageMinimumTime) {
           nextSessionChangeMessageMinimumTime = Date.now() + sessionChangeMessageInterval;
           // This event gets HEAVILY spammed and needs to be debounced

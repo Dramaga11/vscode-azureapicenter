@@ -13,10 +13,13 @@ export class SubscriptionTreeItem extends SubscriptionTreeItemBase {
     public readonly childTypeLabel: string = UiStrings.SubscriptionTreeItemChildTypeLabel;
 
     private _nextLink: string | undefined;
+    // private _subscription: ISubscriptionContext;
 
     constructor(parent: AzExtParentTreeItem, subscription: ISubscriptionContext) {
         super(parent, subscription);
         this.iconPath = treeUtils.getIconPath('azureSubscription');
+        // this._subscription = subscription;
+        this.id = subscription.subscriptionId;
     }
 
     public hasMoreChildrenImpl(): boolean {
